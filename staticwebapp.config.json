@@ -1,0 +1,29 @@
+{
+  "routes": [
+    {
+      "route": "/api/export-content",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/generate-content",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/brave-search",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/content/*/publish",
+      "methods": ["GET", "POST", "PUT"],
+      "allowedRoles": ["anonymous"]
+    },
+    {
+      "route": "/api/process-chain-of-thought*",
+      "methods": ["GET", "POST"],
+      "allowedRoles": ["anonymous"]
+    }
+  ]
+} 

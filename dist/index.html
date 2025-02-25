@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" class="govuk-template">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GOV.UK - Content Writing Assistant</title>
+  <link rel="stylesheet" href="/assets/styles/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="/assets/scripts/content-generator.js"></script>
+</head>
+<body class="govuk-template__body">
+  <header class="govuk-header" role="banner">
+    <div class="govuk-header__container">
+      <div class="govuk-header__logo">
+        <a href="https://www.gov.uk" class="govuk-header__link govuk-header__link--homepage">
+          <img src="/assets/images/crown.svg" class="govuk-header__logotype-crown" alt="GOV.UK Crown Logo">
+          <span class="govuk-header__logotype-text">GOV.UK</span>
+        </a>
+      </div>
+      <div class="govuk-header__content">
+        <span class="govuk-header__service-name">Content Writing Assistant</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="govuk-width-container">
+    <main class="govuk-main-wrapper" id="main-content" role="main">
+      <h1 class="govuk-heading-xl">Content Writing Assistant</h1>
+      
+      <form id="content-form" class="govuk-form">
+        <div class="govuk-form-group">
+          <label class="govuk-label" for="content-type">
+            Content Type
+          </label>
+          <select class="govuk-select" id="content-type" name="content-type" required>
+            <option value="blog">Blog Post</option>
+            <option value="news">News Article</option>
+            <option value="announcement">Announcement</option>
+          </select>
+        </div>
+
+        <div class="govuk-form-group">
+          <label class="govuk-label" for="context">
+            Topic or Context (required)
+          </label>
+          <div class="govuk-hint">
+            Describe what you want to write about. Be as specific as possible.
+          </div>
+          <textarea class="govuk-textarea" id="context" name="context" rows="5" required></textarea>
+        </div>
+
+        <div class="govuk-form-group">
+          <label class="govuk-label" for="title">
+            Title (optional)
+          </label>
+          <div class="govuk-hint">
+            Leave empty to auto-generate a title
+          </div>
+          <input class="govuk-input" id="title" name="title" type="text">
+        </div>
+
+        <div class="govuk-form-group">
+          <fieldset class="govuk-fieldset">
+            <legend class="govuk-fieldset__legend">
+              Author Details (optional)
+            </legend>
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="author-name">Name</label>
+              <input class="govuk-input" id="author-name" name="author-name" type="text">
+            </div>
+            <div class="govuk-form-group">
+              <label class="govuk-label" for="author-role">Role</label>
+              <input class="govuk-input" id="author-role" name="author-role" type="text">
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="govuk-form-group">
+          <label class="govuk-label" for="categories">
+            Categories (optional)
+          </label>
+          <div class="govuk-hint">
+            Comma-separated list of categories
+          </div>
+          <input class="govuk-input" id="categories" name="categories" type="text">
+        </div>
+
+        <div class="govuk-form-group">
+          <button type="submit" class="govuk-button" id="generate-button" data-module="govuk-button">
+            Generate Content
+          </button>
+        </div>
+      </form>
+
+      <div id="content-output" class="govuk-body govuk-!-margin-top-6">
+        <!-- Generated content will appear here -->
+      </div>
+    </main>
+  </div>
+
+  <footer class="govuk-footer">
+    <div class="govuk-footer__container">
+      <div class="govuk-footer__meta">
+        <ul class="govuk-footer__inline-list">
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.blog.gov.uk/all-blogs/">
+              All GOV.UK blogs
+            </a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.blog.gov.uk/all-posts/">
+              All GOV.UK blog posts
+            </a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.gov.uk">
+              GOV.UK
+            </a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.gov.uk/government/organisations">
+              All departments
+            </a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.blog.gov.uk/accessibility-statement/">
+              Accessibility statement
+            </a>
+          </li>
+          <li class="govuk-footer__inline-list-item">
+            <a class="govuk-footer__link" href="https://www.blog.gov.uk/cookies/">
+              Cookies
+            </a>
+          </li>
+        </ul>
+
+        <div class="govuk-footer__licence">
+          <img src="/assets/images/ogl-logo.svg" class="govuk-footer__licence-logo" alt="OGL Logo">
+          <span class="govuk-footer__licence-description">
+            All content is available under the <a class="govuk-footer__link" href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/">Open Government Licence v3.0</a>, except where otherwise stated
+          </span>
+        </div>
+
+        <div class="govuk-footer__copyright">
+          <a class="govuk-footer__copyright-logo" href="https://www.nationalarchives.gov.uk/information-management/re-using-public-sector-information/uk-government-licensing-framework/crown-copyright/">
+            © Crown copyright
+          </a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

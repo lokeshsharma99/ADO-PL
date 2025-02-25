@@ -1,0 +1,11 @@
+{
+  "/api/content/[id]/publish/route": "app/api/content/[id]/publish/route.js",
+  "/api/brave-search/route": "app/api/brave-search/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/export-content/route": "app/api/export-content/route.js",
+  "/api/generate-content/route": "app/api/generate-content/route.js",
+  "/api/process-chain-of-thought/analyze/route": "app/api/process-chain-of-thought/analyze/route.js",
+  "/api/process-chain-of-thought/route": "app/api/process-chain-of-thought/route.js",
+  "/api/process-chain-of-thought/synthesize/route": "app/api/process-chain-of-thought/synthesize/route.js",
+  "/page": "app/page.js"
+}
