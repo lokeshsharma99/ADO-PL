@@ -26,46 +26,34 @@ export interface ChainOfThoughtResult {
   }>;
 }
 
-export async function searchGovUKContent(query: string): Promise<BraveSearchResult[]> {
-  if (!query.trim()) {
-    return [];
-  }
-
+export const searchGovUKContent = async (query: string): Promise<BraveSearchResult[]> => {
+  const BRAVE_API_KEY = 'BSAsDd5v_DhzOXMvxDp59Up7gE4F9FU';
+  const endpoint = 'https://api.search.brave.com/res/v1/web/search';
+  
   try {
-    const response = await fetch('/api/brave-search', {
-      method: 'POST',
+    const response = await fetch(`${endpoint}?q=${encodeURIComponent(query)} site:gov.uk`, {
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
-        query: query.trim() 
-      }),
+        'Accept': 'application/json',
+        'X-Subscription-Token': BRAVE_API_KEY
+      }
     });
 
     if (!response.ok) {
-      console.warn('Brave Search API error:', response.status, response.statusText);
-      return [];
+      throw new Error(`Brave Search API error: ${response.statusText}`);
     }
 
     const data = await response.json();
     
-    if (!data.results || !Array.isArray(data.results)) {
-      console.warn('Invalid response format from Brave Search');
-      return [];
-    }
-
-    return data.results.map((result: BraveSearchApiResult) => ({
-      title: result.title || 'Untitled',
-      description: result.description || 'No description available',
-      url: result.url || '',
-      image: result.image?.url
-    }));
-
+    return data.web?.results?.map((result: any) => ({
+      title: result.title,
+      description: result.description,
+      url: result.url
+    })) || [];
   } catch (error) {
-    console.warn('Error searching Brave:', error);
+    console.error('Error searching GOV.UK content:', error);
     return [];
   }
-}
+};
 
 export async function processWithChainOfThought(
   searchResults: BraveSearchResult[],

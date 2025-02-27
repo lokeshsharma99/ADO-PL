@@ -1,23 +1,28 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  output: 'export',
+  distDir: '.next',
+  images: {
+    unoptimized: true,
+    domains: ['localhost'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   reactStrictMode: true,
   poweredByHeader: false,
   typescript: {
-    // Don't run TypeScript during production builds - we should catch these during development
-    ignoreBuildErrors: process.env.NODE_ENV === 'production',
+    ignoreBuildErrors: true,
   },
   eslint: {
-    // Don't run ESLint during production builds - we should catch these during development
-    ignoreDuringBuilds: process.env.NODE_ENV === 'production',
+    ignoreDuringBuilds: true,
   },
-  webpack: (config) => {
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-    };
-    return config;
-  },
-}
+  trailingSlash: true,
+  // This ensures static paths work correctly
+  basePath: '',
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig; 

@@ -30,13 +30,16 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Helper function to make API calls with retry logic and fallback to Azure
 async function callAI(payload: any, retryCount = 0): Promise<any> {
   try {
+    // Hardcoded Mistral API token (temporary for testing)
+    const MISTRAL_API_KEY = 'Lu7xpXn9EScc0UkfDxGFY6HOpAlsFFRR';
+
     // Try Mistral first
     try {
       const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
         },
         body: JSON.stringify(payload)
       });
@@ -51,7 +54,9 @@ async function callAI(payload: any, retryCount = 0): Promise<any> {
         throw new Error(`Mistral API error: ${response.statusText}`);
       }
 
-      return response.json();
+      const result = await response.json();
+      console.log('Mistral API Response:', result); // Debug log
+      return result;
     } catch (mistralError) {
       console.log('Mistral API failed, falling back to Azure OpenAI:', mistralError);
       

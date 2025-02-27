@@ -44,11 +44,14 @@ async function analyzeSearchResults(searchResults: BraveSearchResult[]): Promise
   }
 
   try {
+    // Hardcoded Mistral API token (temporary for testing)
+    const MISTRAL_API_KEY = 'Lu7xpXn9EScc0UkfDxGFY6HOpAlsFFRR';
+
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'mistral-medium',
@@ -94,11 +97,14 @@ async function synthesizeInformation(points: string[], contentType: string): Pro
   }
 
   try {
+    // Hardcoded Mistral API token (temporary for testing)
+    const MISTRAL_API_KEY = 'Lu7xpXn9EScc0UkfDxGFY6HOpAlsFFRR';
+
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'mistral-medium',
@@ -140,6 +146,9 @@ async function generateContent(
   contentType: string,
   topic: string
 ): Promise<string> {
+  // Hardcoded Mistral API token (temporary for testing)
+  const MISTRAL_API_KEY = 'Lu7xpXn9EScc0UkfDxGFY6HOpAlsFFRR';
+
   const formatGuidance = {
     blog: 'a detailed blog post with clear sections, examples, and practical insights',
     news: 'a news article following the inverted pyramid style, with key information first',
@@ -162,7 +171,7 @@ The tone should be professional but approachable, and the content should be stru
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+      'Authorization': `Bearer ${MISTRAL_API_KEY}`,
     },
     body: JSON.stringify({
       model: 'mistral-small-latest',
@@ -171,6 +180,12 @@ The tone should be professional but approachable, and the content should be stru
     }),
   });
 
+  if (!response.ok) {
+    console.error('Mistral API Error:', await response.text());
+    throw new Error('Failed to generate content');
+  }
+
   const data = await response.json();
+  console.log('Mistral API Response:', data); // Debug log
   return data.choices[0].message.content.trim();
 } 

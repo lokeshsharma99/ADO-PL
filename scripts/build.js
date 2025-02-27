@@ -2,281 +2,97 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-// Configuration
-const BUILD_DIR = 'dist';
+// Improved path resolution using __dirname
+const BUILD_DIR = path.join(__dirname, '../dist');
 const ASSETS_DIR = path.join(BUILD_DIR, 'assets');
 
-// Create directory structure
-const directories = [
-  BUILD_DIR,
-  path.join(ASSETS_DIR, 'images'),
-  path.join(ASSETS_DIR, 'styles'),
-  path.join(ASSETS_DIR, 'scripts')
-];
+// Create directory structure with error handling
+const createDirectories = () => {
+  const directories = [
+    BUILD_DIR,
+    path.join(ASSETS_DIR, 'images'),
+    path.join(ASSETS_DIR, 'styles'),
+    path.join(ASSETS_DIR, 'scripts')
+  ];
 
-// Ensure directories exist
-directories.forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+  try {
+    directories.forEach(dir => {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    });
+  } catch (error) {
+    console.error('Error creating directories:', error);
+    process.exit(1);
   }
-});
+};
 
-// CSS Styles
-const mainCss = `
-:root {
-  --gds-black: #0b0c0c;
-  --gds-white: #ffffff;
-  --gds-blue: #1d70b8;
-  --gds-grey: #505a5f;
-  --gds-green: #00703c;
-  --gds-light-grey: #f3f2f1;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  background: var(--gds-white);
-  font-family: "GDS Transport", arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.govuk-header {
-  background-color: var(--gds-black);
-  padding: 0;
-  margin: 0;
-  border-bottom: 10px solid var(--gds-green);
-}
-
-.govuk-header__container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 8px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.govuk-header__logo {
-  padding-right: 15px;
-}
-
-.govuk-header__link--homepage {
-  display: inline-flex;
-  align-items: center;
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-  color: var(--gds-white);
-}
-
-.govuk-header__logotype-crown {
-  margin-right: 12px;
-  fill: currentColor;
-}
-
-.govuk-header__logotype-text {
-  font-size: 24px;
-  font-weight: 400;
-  color: var(--gds-white);
-  text-decoration: none;
-}
-
-.govuk-width-container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 30px;
-}
-
-.govuk-main-wrapper {
-  padding-top: 20px;
-  padding-bottom: 40px;
-}
-
-.govuk-heading-xl {
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1.0416666667;
-  margin-top: 30px;
-  margin-bottom: 30px;
-}
-
-.govuk-form-group {
-  margin-bottom: 30px;
-}
-
-.govuk-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-.govuk-hint {
-  color: var(--gds-grey);
-  margin-bottom: 10px;
-}
-
-.govuk-input,
-.govuk-textarea,
-.govuk-select {
-  width: 100%;
-  padding: 5px;
-  border: 2px solid var(--gds-black);
-  margin-bottom: 10px;
-}
-
-.govuk-button {
-  background-color: var(--gds-green);
-  color: var(--gds-white);
-  padding: 10px 20px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.govuk-button:disabled {
-  background-color: var(--gds-grey);
-  cursor: not-allowed;
-}
-
-.govuk-footer {
-  padding: 25px 0;
-  border-top: 1px solid #b1b4b6;
-  color: var(--gds-grey);
-  font-size: 16px;
-  line-height: 1.5;
-}
-
-.govuk-footer__container {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 0 30px;
-}
-
-.govuk-footer__meta {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.govuk-footer__inline-list {
-  margin: 0 0 20px;
-  padding: 0;
-  list-style: none;
-}
-
-.govuk-footer__inline-list-item {
-  display: inline-block;
-  margin-right: 15px;
-  margin-bottom: 10px;
-}
-
-.govuk-footer__link {
-  color: var(--gds-blue);
-  text-decoration: underline;
-  font-family: "GDS Transport", arial, sans-serif;
-}
-
-.govuk-footer__link:hover {
-  color: #003078;
-  text-decoration-thickness: 3px;
-}
-
-.govuk-footer__licence {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.govuk-footer__licence-logo {
-  min-width: 41px;
-  height: 17px;
-  margin-top: 3px;
-}
-
-.govuk-footer__licence-description {
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--gds-grey);
-}
-
-.govuk-footer__copyright {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 30px;
-}
-
-.govuk-footer__copyright-logo {
-  display: inline-block;
-  min-width: 125px;
-  padding-top: 112px;
-  background-image: url('/assets/images/govuk-crest.png');
-  background-repeat: no-repeat;
-  background-position: 50% 0;
-  background-size: 125px 102px;
-  text-align: center;
-  text-decoration: none;
-  color: var(--gds-grey);
-}
-
-.error {
-  color: #d4351c;
-  padding: 15px;
-  border: 4px solid #d4351c;
-  margin-bottom: 15px;
-}
-
-.loading {
-  text-align: center;
-  padding: 20px;
-  color: var(--gds-grey);
-}
-
-@media print {
-  body {
-    font-size: 12pt;
-  }
+// Generate index.html content with proper accessibility attributes
+const generateIndexHtml = () => `<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0b0c0c">
+  <title>GOV.UK Service</title>
+  <link rel="stylesheet" href="/assets/styles/main.css">
+  <link rel="icon" href="/assets/images/favicon.ico" type="image/x-icon">
+</head>
+<body class="bg-white font-sans">
+  <header class="govuk-header" role="banner" data-module="govuk-header">
+    <div class="govuk-header__container govuk-width-container">
+      <div class="govuk-header__logo">
+        <a href="/" class="govuk-header__link--homepage" aria-label="Go to GOV.UK homepage">
+          <svg class="govuk-header__logotype-crown" focusable="false" aria-hidden="true">
+            <!-- Crown SVG content -->
+          </svg>
+          <span class="govuk-header__logotype-text">GOV.UK</span>
+        </a>
+      </div>
+    </div>
+  </header>
   
-  .govuk-header,
-  .govuk-footer {
-    display: none;
+  <main id="main-content" class="govuk-width-container" role="main">
+    <!-- Main content -->
+  </main>
+
+  <footer class="govuk-footer" role="contentinfo">
+    <!-- Footer content -->
+  </footer>
+  
+  <script src="/assets/scripts/content-generator.js" defer></script>
+</body>
+</html>`;
+
+// Main build process with error handling
+const runBuild = () => {
+  try {
+    createDirectories();
+
+    // Generate index.html from template
+    fs.writeFileSync(path.join(BUILD_DIR, 'index.html'), generateIndexHtml());
+
+    // Download crown copyright logo with error handling
+    try {
+      const crownCopyrightUrl = 'https://www.gov.uk/assets/government-frontend/govuk-crest-795cd6b7da4a2efe0ffb973f525d2f2f3c9f2186d08a4dc75f42b6661df32d25.png';
+      execSync(`curl ${crownCopyrightUrl} -o ${path.join(ASSETS_DIR, 'images', 'govuk-crest.png')}`);
+    } catch (fetchError) {
+      console.error('Error fetching crown image:', fetchError);
+    }
+
+    console.log('Build completed successfully! Files are ready in the dist directory.');
+    console.log('\nAzure Deployment Checklist:');
+    console.log('1. Create Storage Account with Static Website hosting enabled');
+    console.log('2. Set index.html as default document');
+    console.log('3. Upload all files from dist/ to $web container');
+    console.log('4. Configure CDN endpoint for custom domain (optional)');
+    console.log('5. Set environment variables in Azure Portal:');
+    console.log('   - MISTRAL_API_KEY=<your-api-key>');
+    
+  } catch (error) {
+    console.error('Build failed:', error);
+    process.exit(1);
   }
-}`;
+};
 
-fs.writeFileSync(path.join(ASSETS_DIR, 'styles', 'main.css'), mainCss);
-
-// SVG Images
-const crownSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 132 97" height="32" width="36">
-  <path fill="currentColor" d="M25 30.2c3.5 1.5 7.7-.2 9.1-3.7 1.5-3.6-.2-7.8-3.9-9.2-3.6-1.4-7.6.3-9.1 3.9-1.4 3.5.3 7.5 3.9 9zM9 39.5c3.6 1.5 7.8-.2 9.2-3.7 1.5-3.6-.2-7.8-3.9-9.1-3.6-1.5-7.6.2-9.1 3.8-1.4 3.5.3 7.5 3.8 9zM4.4 57.2c3.5 1.5 7.7-.2 9.1-3.8 1.5-3.6-.2-7.7-3.9-9.1-3.5-1.5-7.6.3-9.1 3.8-1.4 3.5.3 7.6 3.9 9.1zm38.3-21.4c3.5 1.5 7.7-.2 9.1-3.8 1.5-3.6-.2-7.7-3.9-9.1-3.6-1.5-7.6.3-9.1 3.8-1.3 3.6.4 7.7 3.9 9.1zm64.4-5.6c-3.6 1.5-7.8-.2-9.1-3.7-1.5-3.6.2-7.8 3.8-9.2 3.6-1.4 7.7.3 9.2 3.9 1.3 3.5-.4 7.5-3.9 9zm15.9 9.3c-3.6 1.5-7.7-.2-9.1-3.7-1.5-3.6.2-7.8 3.7-9.1 3.6-1.5 7.7.2 9.2 3.8 1.5 3.5-.3 7.5-3.8 9zm4.7 17.7c-3.6 1.5-7.8-.2-9.2-3.8-1.5-3.6.2-7.7 3.9-9.1 3.6-1.5 7.7.3 9.2 3.8 1.3 3.5-.4 7.6-3.9 9.1zM89.3 35.8c-3.6 1.5-7.8-.2-9.2-3.8-1.4-3.6.2-7.7 3.9-9.1 3.6-1.5 7.7.3 9.2 3.8 1.4 3.6-.3 7.7-3.9 9.1zM69.7 17.7l8.9 4.7V9.3l-8.9 2.8c-.2-.3-.5-.6-.9-.9L72.4 0H59.6l3.5 11.2c-.3.3-.6.5-.9.9l-8.8-2.8v13.1l8.8-4.7c.3.3.6.7.9.9l-5 15.4v.1c-.2.8-.4 1.6-.4 2.4 0 4.1 3.1 7.5 7 8.1h.2c.3 0 .7.1 1 .1.4 0 .7 0 1-.1h.2c4-.6 7.1-4.1 7.1-8.1 0-.8-.1-1.7-.4-2.4V34l-5.1-15.4c.4-.2.7-.6 1-.9zM66 92.8c16.9 0 32.8 1.1 47.1 3.2 4-16.9 8.9-26.7 14-33.5l-9.6-3.4c1 4.9 1.1 7.2 0 10.2-1.5-1.4-3-4.3-4.2-8.7L108.6 76c2.8-2 5-3.2 7.5-3.3-4.4 9.4-10 11.9-13.6 11.2-4.3-.8-6.3-4.6-5.6-7.9 1-4.7 5.7-5.9 8-.5 4.3-8.7-3-11.4-7.6-8.8 7.1-7.2 7.9-13.5 2.1-21.1-8 6.1-8.1 12.3-4.5 20.8-4.7-5.4-12.1-2.5-9.5 6.2 3.4-5.2 7.9-2 7.2 3.1-.6 4.3-6.4 7.8-13.5 7.2-10.3-.9-10.9-8-11.2-13.8 2.5-.5 7.1 1.8 11 7.3L80.2 60c-4.1 4.4-8 5.3-12.3 5.4 1.4-4.4 8-16.5 8-16.5h-20s6.4 12.1 7.9 16.5c-4.2-.1-8-1-12.3-5.4l1.4 16.4c3.9-5.5 8.5-7.7 10.9-7.3-.3 5.8-.9 12.8-11.1 13.8-7.2.6-12.9-2.9-13.5-7.2-.7-5 3.8-8.3 7.1-3.1 2.7-8.7-4.6-11.6-9.4-6.2 3.7-8.5 3.6-14.7-4.6-20.8-5.8 7.6-5 13.9 2.2 21.1-4.7-2.6-11.9.1-7.7 8.8 2.3-5.5 7.1-4.2 8.1.5.7 3.3-1.3 7.1-5.7 7.9-3.5.7-9-1.8-13.5-11.2 2.5.1 4.7 1.3 7.5 3.3l-4.7-15.4c-1.2 4.4-2.7 7.2-4.3 8.7-1.1-3-.9-5.3 0-10.2l-9.5 3.4c5 6.9 9.9 16.7 14 33.5 14.8-2.1 30.8-3.2 47.7-3.2z"/>
-</svg>`;
-
-const oglSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 483.2 195.7" height="17" width="41">
-  <path fill="currentColor" d="M421.5 142.8V.1l-50.7 32.3v161.1h112.4v-50.7zm-122.3-9.6A47.12 47.12 0 0 1 221 97.8c0-26 21.1-47.1 47.1-47.1 16.7 0 31.4 8.7 39.7 21.8l42.7-27.2A97.63 97.63 0 0 0 268.1 0c-36.5 0-68.3 20.1-85.1 49.7A98 98 0 0 0 97.8 0C43.9 0 0 43.9 0 97.8s43.9 97.8 97.8 97.8c36.5 0 68.3-20.1 85.1-49.7a97.76 97.76 0 0 0 149.6 25.4l19.4 22.2h3v-87.8h-80l24.3 27.5zM97.8 145c-26 0-47.1-21.1-47.1-47.1s21.1-47.1 47.1-47.1 47.2 21 47.2 47S123.8 145 97.8 145"/>
-</svg>`;
-
-fs.writeFileSync(path.join(ASSETS_DIR, 'images', 'crown.svg'), crownSvg);
-fs.writeFileSync(path.join(ASSETS_DIR, 'images', 'ogl-logo.svg'), oglSvg);
-
-// Download crown copyright logo
-const crownCopyrightUrl = 'https://www.gov.uk/assets/government-frontend/govuk-crest-795cd6b7da4a2efe0ffb973f525d2f2f3c9f2186d08a4dc75f42b6661df32d25.png';
-execSync(`curl ${crownCopyrightUrl} -o ${path.join(ASSETS_DIR, 'images', 'govuk-crest.png')}`);
-
-// Create index.html
-const indexHtml = fs.readFileSync('dist/index.html', 'utf8');
-fs.writeFileSync(path.join(BUILD_DIR, 'index.html'), indexHtml);
-
-// Copy content-generator.js
-const contentGeneratorJs = fs.readFileSync('dist/assets/scripts/content-generator.js', 'utf8');
-fs.writeFileSync(path.join(ASSETS_DIR, 'scripts', 'content-generator.js'), contentGeneratorJs);
-
-console.log('Build completed successfully! Files are ready in the dist directory.');
-console.log('\nTo deploy to Azure Storage:');
-console.log('1. Create a Storage Account in Azure Portal');
-console.log('2. Enable Static Website hosting');
-console.log('3. Upload the contents of the dist directory');
-console.log('\nRemember to:');
-console.log('1. Replace YOUR_MISTRAL_API_KEY_HERE in content-generator.js');
-console.log('2. Configure CORS if needed');
-console.log('3. Set up custom domain (optional)'); 
+runBuild(); 

@@ -39,6 +39,50 @@ interface ContentPreviewProps {
   onContentChange?: (newContent: string, newTitle: string) => void;
 }
 
+type GenerationContentType = 'blog' | 'news' | 'announcement';
+
+// Add these utility functions at the top of the file after the imports
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const callMistralAPI = async (payload: any, retryCount = 0, maxRetries = 3): Promise<any> => {
+  const MISTRAL_API_KEY = 'Lu7xpXn9EScc0UkfDxGFY6HOpAlsFFRR';
+  const baseDelay = 1000; // 1 second
+
+  try {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (response.status === 429 && retryCount < maxRetries) {
+      // Calculate exponential backoff delay
+      const delay = baseDelay * Math.pow(2, retryCount);
+      console.log(`Rate limited, attempt ${retryCount + 1}/${maxRetries}. Waiting ${delay}ms...`);
+      await wait(delay);
+      return callMistralAPI(payload, retryCount + 1, maxRetries);
+    }
+
+    if (!response.ok) {
+      throw new Error(`Mistral API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    if (retryCount < maxRetries) {
+      const delay = baseDelay * Math.pow(2, retryCount);
+      console.log(`Error occurred, attempt ${retryCount + 1}/${maxRetries}. Retrying in ${delay}ms...`);
+      await wait(delay);
+      return callMistralAPI(payload, retryCount + 1, maxRetries);
+    }
+    throw error;
+  }
+};
+
 export const ContentEditor = ({ contentType }: ContentEditorProps) => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
@@ -117,72 +161,191 @@ export const ContentEditor = ({ contentType }: ContentEditorProps) => {
       setIsGenerating(true);
       setGenerationError(null);
 
-      // Generate a title based on the context
-      const titleResponse = await fetch('/api/generate-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contentType,
-          context: generationContext,
-          isTitle: true,
-        }),
-      });
+      // First, search for relevant GOV.UK content
+      const searchResults = await searchGovUKContent(generationContext);
 
-      if (!titleResponse.ok) {
-        const titleError = await titleResponse.json().catch(() => ({}));
-        console.error('Title generation error:', titleError);
-        throw new Error(titleError.error || 'Failed to generate title');
+      // Generate title with context from search results
+      const titlePayload = {
+        model: 'mistral-medium',
+        messages: [
+          {
+            role: 'system',
+            content: getTitlePrompt(contentType)
+          },
+          {
+            role: 'user',
+            content: `Generate a ${contentType} title for this topic: ${generationContext}\n\nRelevant information from GOV.UK:\n${
+              searchResults.map(result => `- ${result.title}\n  ${result.description}`).join('\n')
+            }`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 50
+      };
+
+      const titleData = await callMistralAPI(titlePayload);
+      
+      if (!titleData.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from AI service');
       }
 
-      const titleData = await titleResponse.json();
-      if (!titleData.content) {
-        throw new Error('No title was generated');
-      }
-
-      const generatedTitle = titleData.content.trim();
-      console.log('Generated title:', generatedTitle);
+      let generatedTitle = titleData.choices[0].message.content
+        .trim()
+        .replace(/^["']|["']$/g, '')
+        .replace(/^#+ /g, '')
+        .replace(/\.$/, '');
+        
+      generatedTitle = generatedTitle.split(/[\n\r]/)[0].trim();
+      
       setTitle(generatedTitle);
 
-      // Generate the main content
-      const contentResponse = await fetch('/api/generate-content', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: generatedTitle,
-          contentType,
-          context: generationContext,
-          author: contentType === 'blog' ? author : undefined,
-          categories: selectedCategories.length > 0 ? selectedCategories : undefined,
-        }),
-      });
+      // Add a small delay between API calls
+      await wait(1000);
 
-      if (!contentResponse.ok) {
-        const contentError = await contentResponse.json().catch(() => ({}));
-        console.error('Content generation error:', contentError);
-        throw new Error(contentError.error || 'Failed to generate content');
-      }
+      // Generate the main content using search results for context
+      const contentPayload = {
+        model: 'mistral-medium',
+        messages: [
+          {
+            role: 'system',
+            content: getContentPrompt(contentType)
+          },
+          {
+            role: 'user',
+            content: `Title: ${generatedTitle}\n\nTopic: ${generationContext}\n\nRelevant GOV.UK sources:\n${
+              searchResults.map(result => `- ${result.title}\n  URL: ${result.url}\n  ${result.description}`).join('\n\n')
+            }${
+              author ? `\n\nAuthor: ${author.name} (${author.role})` : ''
+            }${
+              selectedCategories.length > 0 ? `\n\nCategories: ${selectedCategories.join(', ')}` : ''
+            }`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      };
 
-      const data = await contentResponse.json();
-      if (!data.content) {
-        throw new Error('No content was generated');
-      }
-
-      setContent(data.content);
+      const contentData = await callMistralAPI(contentPayload);
       
+      if (!contentData.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from AI service');
+      }
+
+      // Format the content with proper markdown structure
+      const formattedContent = formatContentWithSources(
+        contentData.choices[0].message.content,
+        searchResults
+      );
+
+      setContent(formattedContent);
+      setIsGenerating(false);
+
     } catch (error) {
-      console.error('Content generation error details:', error);
+      console.error('Content generation error:', error);
       setGenerationError(
         error instanceof Error 
-          ? error.message 
-          : 'Failed to generate content. Please try again.'
+          ? `Error: ${error.message}. Please try again in a few moments.` 
+          : 'Failed to generate content. Please try again in a few moments.'
       );
-    } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Helper function to get title prompt
+  const getTitlePrompt = (type: GenerationContentType) => {
+    const prompts: Record<GenerationContentType, string> = {
+      blog: `You are a professional title generator for blog posts. Create a catchy, engaging, and descriptive title that:
+- Grabs attention while maintaining professionalism
+- Uses active voice and strong verbs
+- Avoids generic terms like "Introduction" or "Overview"
+- Reflects the main value or insight of the content
+- Follows UK Government style guidelines
+- Is concise (5-10 words)
+- Does not include unnecessary punctuation
+
+IMPORTANT: Return ONLY the title text. Do not include any explanations, notes, or additional text.`,
+
+      news: `You are a professional title generator for news articles. Create a clear, informative title that:
+- Leads with the most important information
+- Uses present tense for current events
+- Is factual and objective
+- Avoids sensationalism
+- Follows UK Government style guidelines
+- Is concise (5-10 words)
+- Does not include unnecessary punctuation
+
+IMPORTANT: Return ONLY the title text. Do not include any explanations, notes, or additional text.`,
+
+      announcement: `You are a professional title generator for official announcements. Create a clear, authoritative title that:
+- States the announcement purpose directly
+- Uses official but accessible language
+- Includes relevant service or policy names
+- Follows UK Government style guidelines
+- Is concise (5-10 words)
+- Does not include unnecessary punctuation
+
+IMPORTANT: Return ONLY the title text. Do not include any explanations, notes, or additional text.`
+    };
+
+    return prompts[type] || prompts.blog;
+  };
+
+  // Helper function to get content prompt
+  const getContentPrompt = (type: GenerationContentType) => {
+    const prompts: Record<GenerationContentType, string> = {
+      blog: `Create a detailed blog post that:
+- Starts with an engaging introduction
+- Uses clear headings for main sections
+- Includes real examples and specific details
+- Ends with a conclusion or call to action
+- Uses markdown formatting
+Do not include the title in the content.`,
+
+      news: `Create a news article that:
+- Leads with key information (inverted pyramid style)
+- Includes supporting details and context
+- Uses quotes or relevant data
+- Provides background information
+- Uses markdown formatting
+Do not include the title in the content.`,
+
+      announcement: `Create an announcement that:
+- States the key message or change clearly
+- Includes important dates or deadlines
+- Specifies who is affected
+- Lists required actions
+- Provides next steps
+- Uses markdown formatting
+Do not include the title in the content.`
+    };
+
+    return prompts[type] || prompts.blog;
+  };
+
+  // Helper function to format content with proper structure and sources
+  const formatContentWithSources = (content: string, sources: Array<{ title: string; url: string; }>) => {
+    // Split content into sections based on headings
+    const sections = content.split(/(?=^#{1,3} )/m);
+    
+    // Format each section with proper spacing
+    const formattedSections = sections.map(section => section.trim()).join('\n\n');
+    
+    // Add sources section at the end
+    const formattedContent = `${formattedSections}
+
+## Sources and References
+
+${sources.map(source => `- [${source.title}](${source.url})`).join('\n')}
+
+---
+
+*Generated using official GOV.UK sources on ${new Date().toLocaleDateString('en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric'
+})}*`;
+
+    return formattedContent;
   };
 
   const handlePreviewContentChange = (newContent: string, newTitle: string) => {
